@@ -19,27 +19,25 @@ async function startBot() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    // 👇 YAHAN APNA WHATSAPP NUMBER LIKHEIN (Example: 916387677864)
-    const phoneNumber = "91XXXXXXXXXX"; 
-
-    if (!sock.authState.creds.registered) {
-        setTimeout(async () => {
-            try {
-                let code = await sock.requestPairingCode(phoneNumber.trim());
-                console.log('\n==================================');
-                console.log(`🔑 PAIRING CODE: ${code}`);
-                console.log('==================================\n');
-            } catch (err) {
-                console.log("Code generating error:", err);
-            }
-        }, 3000);
-    }
-
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
 
         if (connection === 'open') {
-            console.log('✅ WhatsApp Bot Connected!');
+            console.log('🎉 BOOM! Bot Server Par Direct Live Ho Gaya Hai!');
+
+            try {
+                const channels = await sock.newsletterSubscribed();
+                console.log('===================================');
+                console.log('📌 AAPKE CHANNELS KI LIST:');
+                channels.forEach(ch => {
+                    console.log(`Naam: ${ch.name}`);
+                    console.log(`ID  : ${ch.id}`);
+                    console.log('-----------------------------------');
+                });
+                console.log('===================================\n');
+            } catch (e) {
+                console.log('Channel ID error:', e.message);
+            }
         }
 
         if (connection === 'close') {
@@ -48,7 +46,7 @@ async function startBot() {
         }
     });
 
-    // 🕒 7:00 PM Daily Auto Post
+    // 🕒 Daily Shaam 7:00 PM Post
     cron.schedule('0 19 * * *', async () => {
         const channelJid = 'YOUR_CHANNEL_ID@newsletter';
         
