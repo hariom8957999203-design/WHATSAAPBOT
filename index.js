@@ -1,4 +1,5 @@
 const { makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const cron = require('node-cron');
 
@@ -14,26 +15,20 @@ async function startBot() {
     
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: false
+        printQRInTerminal: true
     });
 
     sock.ev.on('creds.update', saveCreds);
 
-    // 📱 PAIRING CODE GENERATION (Apna Country Code + Mobile Number Yahan Dalein)
-    // Example: 919876543210 (Bina '+' sign ke)
-    const phoneNumber = "91XXXXXXXXXX"; // 👈 YAHAN APNA WHATSAPP NUMBER DALEIN
-
-    if (!sock.authState.creds.registered) {
-        setTimeout(async () => {
-            let code = await sock.requestPairingCode(phoneNumber);
-            console.log('\n==================================');
-            console.log(`🔑 AAPKA PAIRING CODE HAI: ${code}`);
-            console.log('==================================\n');
-        }, 3000);
-    }
-
     sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, qr } = update;
+        
+        if (qr) {
+            console.log('\n==================================');
+            console.log('👇 NAYA QR CODE GENERATE HUA HAI:');
+            qrcode.generate(qr, { small: true });
+            console.log('==================================\n');
+        }
 
         if (connection === 'open') {
             console.log('✅ WhatsApp Bot Successfully Connected!\n');
@@ -59,7 +54,7 @@ async function startBot() {
         }
     });
 
-    // 🕒 7:00 PM Daily Post
+    // 🕒 Shaam 7:00 PM Post
     cron.schedule('0 19 * * *', async () => {
         const channelJid = 'YOUR_CHANNEL_ID@newsletter';
         
@@ -69,7 +64,7 @@ async function startBot() {
                 image: { url: currentImageLink },
                 caption: '🔥 Aaj ki Nayi Deal! Order karne ke liye inbox karein.'
             });
-            console.log(`✅ Shaam 7 baje Daily Post Sent: ${currentImageLink}`);
+            console.log(`✅ Daily Post Sent: ${currentImageLink}`);
             photoLinks.shift();
         }
     }, {
@@ -77,7 +72,7 @@ async function startBot() {
         timezone: "Asia/Kolkata"
     });
 
-    // 🤖 Customer Rate Auto Reply
+    // 🤖 Customer Rate Reply
     sock.ev.on('messages.upsert', async (m) => {
         const msg = m.messages[0];
         if (!msg.message || msg.key.fromMe) return;
