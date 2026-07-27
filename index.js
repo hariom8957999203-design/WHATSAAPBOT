@@ -1,7 +1,21 @@
 const { makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const cron = require('node-cron');
+const express = require('express');
 
+// 🌐 1. RENDER KE PORT TIMEOUT ERROR KO FIX KARNE KE LIYE WEB SERVER
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+    res.send('🤖 WhatsApp Bot is Live and Running 24/7!');
+});
+
+app.listen(PORT, () => {
+    console.log(`🌐 Dummy Web Server listening on port ${PORT}`);
+});
+
+// 📁 Rates & Photos Load
 const rates = JSON.parse(fs.readFileSync('./rates.json'));
 
 let photoLinks = [
@@ -9,6 +23,7 @@ let photoLinks = [
     "https://raw.githubusercontent.com/hariom8957999203-design/WHATSAAPBOT/main/image_search_1740649401847.jpg"
 ];
 
+// 🚀 2. WHATSAPP BOT ENGINE
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
     
@@ -23,20 +38,20 @@ async function startBot() {
         const { connection, lastDisconnect } = update;
 
         if (connection === 'open') {
-            console.log('🎉 BOOM! Bot Server Par Direct Live Ho Gaya Hai!');
+            console.log('\n===========================================');
+            console.log('🎉 BOOM! Bot Server Par Direct Live Ho Gaya!');
+            console.log('===========================================\n');
 
             try {
                 const channels = await sock.newsletterSubscribed();
-                console.log('===================================');
                 console.log('📌 AAPKE CHANNELS KI LIST:');
                 channels.forEach(ch => {
                     console.log(`Naam: ${ch.name}`);
                     console.log(`ID  : ${ch.id}`);
                     console.log('-----------------------------------');
                 });
-                console.log('===================================\n');
             } catch (e) {
-                console.log('Channel ID error:', e.message);
+                console.log('Channel list fetch note:', e.message);
             }
         }
 
