@@ -1,5 +1,4 @@
 const { makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const cron = require('node-cron');
 
@@ -15,37 +14,32 @@ async function startBot() {
     
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: true
+        printQRInTerminal: false
     });
 
     sock.ev.on('creds.update', saveCreds);
 
+    // 👇 YAHAN APNA WHATSAPP NUMBER LIKHEIN (Example: 916387677864)
+    const phoneNumber = "91XXXXXXXXXX"; 
+
+    if (!sock.authState.creds.registered) {
+        setTimeout(async () => {
+            try {
+                let code = await sock.requestPairingCode(phoneNumber.trim());
+                console.log('\n==================================');
+                console.log(`🔑 PAIRING CODE: ${code}`);
+                console.log('==================================\n');
+            } catch (err) {
+                console.log("Code generating error:", err);
+            }
+        }, 3000);
+    }
+
     sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
-        
-        if (qr) {
-            console.log('\n==================================');
-            console.log('👇 NAYA QR CODE GENERATE HUA HAI:');
-            qrcode.generate(qr, { small: true });
-            console.log('==================================\n');
-        }
+        const { connection, lastDisconnect } = update;
 
         if (connection === 'open') {
-            console.log('✅ WhatsApp Bot Successfully Connected!\n');
-
-            try {
-                const channels = await sock.newsletterSubscribed();
-                console.log('===================================');
-                console.log('📌 AAPKE WHATSAPP CHANNELS KI LIST:');
-                channels.forEach(ch => {
-                    console.log(`Naam: ${ch.name}`);
-                    console.log(`ID  : ${ch.id}`);
-                    console.log('-----------------------------------');
-                });
-                console.log('===================================\n');
-            } catch (e) {
-                console.log('Channel ID dekhne me issue:', e.message);
-            }
+            console.log('✅ WhatsApp Bot Connected!');
         }
 
         if (connection === 'close') {
@@ -54,7 +48,7 @@ async function startBot() {
         }
     });
 
-    // 🕒 Shaam 7:00 PM Post
+    // 🕒 7:00 PM Daily Auto Post
     cron.schedule('0 19 * * *', async () => {
         const channelJid = 'YOUR_CHANNEL_ID@newsletter';
         
@@ -72,7 +66,7 @@ async function startBot() {
         timezone: "Asia/Kolkata"
     });
 
-    // 🤖 Customer Rate Reply
+    // 🤖 Customer Rate Auto Reply
     sock.ev.on('messages.upsert', async (m) => {
         const msg = m.messages[0];
         if (!msg.message || msg.key.fromMe) return;
